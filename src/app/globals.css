@@ -53,21 +53,21 @@
 [data-theme="light"] {
   --bg-base: #f0f4f8;
   --bg-surface: #ffffff;
-  --bg-card: rgba(255, 255, 255, 0.7);
-  --bg-card-hover: rgba(255, 255, 255, 0.85);
-  --glass: rgba(255, 255, 255, 0.55);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --accent: #059669;
-  --accent-rgb: 5, 150, 105;
-  --accent-dim: rgba(5, 150, 105, 0.1);
-  --accent-glow: rgba(5, 150, 105, 0.25);
-  --gold: #d97706;
-  --text-1: #0f172a;
-  --text-2: #475569;
-  --text-3: #94a3b8;
-  --border: rgba(0, 0, 0, 0.08);
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --chart-grid: #e2e8f0;
+  --bg-card: rgba(255, 255, 255, 0.88);
+  --bg-card-hover: rgba(255, 255, 255, 0.95);
+  --glass: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(0, 0, 0, 0.15);
+  --accent: #047857;
+  --accent-rgb: 4, 120, 87;
+  --accent-dim: rgba(4, 120, 87, 0.1);
+  --accent-glow: rgba(4, 120, 87, 0.25);
+  --gold: #b45309;
+  --text-1: #020617;
+  --text-2: #334155;
+  --text-3: #475569;
+  --border: rgba(0, 0, 0, 0.15);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --chart-grid: #cbd5e1;
   --chart-tooltip-bg: #ffffff;
 }
 
