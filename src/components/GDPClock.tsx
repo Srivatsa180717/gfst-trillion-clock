@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   getIndiaGDP,
   getPopulation,
   getRank,
   getGrowthRate,
-  fmtB,
   formatCompact,
   fetchExchangeRate,
+  INDIA_POPULATION,
   type FxResult,
 } from "@/lib/data";
 
@@ -19,18 +19,24 @@ interface Props {
 export function GDPClock({ year }: Props) {
   const [fx, setFx] = useState<FxResult | null>(null);
   const [currentGDP, setCurrentGDP] = useState(0);
+  const [livePop, setLivePop] = useState(0);
   const prevDigitsRef = useRef("");
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const popTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const gdp = getIndiaGDP(year);
   const pop = getPopulation(year);
   const rank = getRank(year);
   const growth = getGrowthRate(year);
-  const perCapita = pop > 0 ? (gdp * 1e9) / (pop * 1e6) : 0;
   const currentYear = new Date().getFullYear();
   const isLive = year === currentYear;
   const isProjection = year > currentYear;
   const isPast = year < currentYear;
+
+  // The population used for display & per capita
+  const displayPop = isLive && livePop > 0 ? livePop : pop;
+  // Per capita uses live ticking GDP and live interpolated population
+  const perCapita = displayPop > 0 ? (currentGDP * 1e9) / (displayPop * 1e6) : 0;
 
   // Fetch exchange rate
   useEffect(() => {
@@ -86,6 +92,37 @@ export function GDPClock({ year }: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, gdp, isLive]);
+
+  // Live population interpolation (ticks every second for current year)
+  useEffect(() => {
+    if (popTickRef.current) {
+      clearInterval(popTickRef.current);
+      popTickRef.current = null;
+    }
+
+    if (isLive) {
+      const popStart = INDIA_POPULATION[year - 1] ?? pop;
+      const popEnd = INDIA_POPULATION[year] ?? pop;
+      const popPerSecond = (popEnd - popStart) / (365.25 * 86400);
+
+      const now = new Date();
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year + 1, 0, 1);
+      const frac = (now.getTime() - yearStart.getTime()) / (yearEnd.getTime() - yearStart.getTime());
+      setLivePop(popStart + (popEnd - popStart) * frac);
+
+      popTickRef.current = setInterval(() => {
+        setLivePop(prev => prev + popPerSecond);
+      }, 1000);
+    } else {
+      setLivePop(pop);
+    }
+
+    return () => {
+      if (popTickRef.current) clearInterval(popTickRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year, pop, isLive]);
 
   // Build digit cells
   const dollars = Math.floor(currentGDP * 1e9);
@@ -171,12 +208,16 @@ export function GDPClock({ year }: Props) {
         <MetricCard label="Growth Rate" value={`${growth.toFixed(1)}%`} year={year} showYear />
         <MetricCard label="Global Rank" value={`#${rank}`} />
         <MetricCard
-          label={<>Per Capita <span className="fx-live">LIVE</span></>}
+          label={<>Per Capita {isLive && <span className="fx-live">LIVE</span>}</>}
           value={`$${Math.round(perCapita).toLocaleString()}`}
         />
         <MetricCard
-          label={<>Population <span className="fx-live">LIVE</span></>}
-          value={`${pop.toFixed(0)}M`}
+          label={<>Population {isLive && <span className="fx-live">LIVE</span>}</>}
+          value={
+            isLive
+              ? displayPop.toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "M"
+              : (displayPop / 1000).toFixed(2) + "B"
+          }
         />
         <MetricCard
           label={<>USD/INR <span className="fx-live">LIVE</span></>}
