@@ -7,7 +7,6 @@ import {
   Line,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   Legend,
@@ -123,7 +122,7 @@ export default function ComparePage() {
               onChange={(e) => setStartYear(Number(e.target.value))}
               className="text-xs rounded-md bg-surface border border-border text-foreground px-2 py-1.5"
             >
-              {[2010, 2020, 2024, 2030].map((y) => (
+              {ALL_YEARS.map((y) => (
                 <option key={y} value={y}>{y}</option>
               ))}
             </select>
@@ -166,11 +165,12 @@ export default function ComparePage() {
           <div className="h-[400px]">
             <ResponsiveContainer>
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-                <XAxis dataKey="year" stroke="#737373" tick={{ fontSize: 11 }} />
+                <XAxis dataKey="year" stroke="#737373" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis
                   stroke="#737373"
                   tick={{ fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
                   tickFormatter={(v: number) => {
                     if (metric === "gdp") return v >= 1000 ? `${(v / 1000).toFixed(1)}T` : `${v}B`;
                     if (metric === "perCapita") return `$${(v / 1000).toFixed(0)}K`;
