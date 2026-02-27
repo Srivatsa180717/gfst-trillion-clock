@@ -136,7 +136,7 @@ export function IndiaMap({ year }: Props) {
       </div>
 
       {/* Map grid: map + side panel */}
-      <div className="flex flex-col lg:flex-row gap-5 items-stretch">
+      <div className="flex flex-col lg:flex-row gap-5 items-stretch" onMouseLeave={() => setHovered(null)}>
         {/* Map canvas */}
         <div className="flex-1 relative min-h-[500px] lg:min-h-[680px] rounded-xl overflow-hidden"
           style={{ background: "var(--bg-surface)", border: "1px solid var(--glass-border)" }}
@@ -145,7 +145,6 @@ export function IndiaMap({ year }: Props) {
             viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
             className="w-full h-full"
             preserveAspectRatio="xMidYMid meet"
-            onMouseLeave={() => setHovered(null)}
           >
             {paths.map(({ feature, d }) => {
               const gdp = stateGDPs.get(feature.c) ?? 0;
