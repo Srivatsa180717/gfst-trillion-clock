@@ -14,6 +14,10 @@ import {
   ReferenceLine,
   Area,
   AreaChart,
+  ComposedChart,
+  Cell,
+  RadialBarChart,
+  RadialBar,
 } from "recharts";
 import {
   STATES_DATA,
@@ -275,25 +279,50 @@ interface ChartData {
 
 function GDPChart({ data, currentYear }: { data: ChartData[]; currentYear: number }) {
   const axisColor = "var(--text-3)";
+  const nowIndex = data.findIndex(d => d.year === currentYear);
+
+  // Split data into past and projected for dual-tone
+  const pastData = data.map(d => ({ ...d, gdpPast: d.year <= currentYear ? d.gdp : undefined }));
+  const projData = data.map(d => ({ ...d, gdpProj: d.year >= currentYear ? d.gdp : undefined }));
+  const merged = data.map((d, i) => ({
+    ...d,
+    gdpPast: pastData[i].gdpPast,
+    gdpProj: projData[i].gdpProj,
+  }));
+
   return (
     <ResponsiveContainer>
-      <AreaChart data={data}>
+      <AreaChart data={merged}>
         <defs>
-          <linearGradient id="gdpGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
+          <linearGradient id="gdpPastGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.45} />
+            <stop offset="50%" stopColor="#f59e0b" stopOpacity={0.15} />
             <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
           </linearGradient>
+          <linearGradient id="gdpProjGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+            <stop offset="50%" stopColor="#10b981" stopOpacity={0.12} />
+            <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+          </linearGradient>
+          <filter id="glowAmber">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
         <XAxis dataKey="year" stroke={axisColor} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
         <YAxis stroke={axisColor} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v >= 1000 ? (v / 1000).toFixed(1) + "T" : v + "B"}`} />
         <Tooltip
-          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-1)" }}
-          formatter={((v: unknown) => [`$${fmtB(Number(v))}`, "GDP"]) as never}
+          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12, color: "var(--text-1)", backdropFilter: "blur(8px)" }}
+          formatter={((v: unknown) => v != null ? [`$${fmtB(Number(v))}`, "GDP"] : []) as never}
           labelFormatter={(l) => `Year: ${l}`}
         />
-        <ReferenceLine x={currentYear} stroke={axisColor} strokeDasharray="3 3" label={{ value: "Now", fill: axisColor, fontSize: 10 }} />
-        <ReferenceLine y={1000} stroke="#f59e0b" strokeDasharray="5 5" label={{ value: "$1T", fill: "#f59e0b", fontSize: 10, position: "left" }} />
-        <Area type="monotone" dataKey="gdp" stroke="#f59e0b" fill="url(#gdpGrad)" strokeWidth={2} dot={false} />
+        <ReferenceLine x={currentYear} stroke="var(--accent)" strokeWidth={2} strokeDasharray="4 4" label={{ value: "▼ NOW", fill: "var(--accent)", fontSize: 10, fontWeight: 700, position: "top" }} />
+        <ReferenceLine y={1000} stroke="#f59e0b" strokeDasharray="8 4" strokeWidth={1.5} label={{ value: "🏆 $1 TRILLION", fill: "#f59e0b", fontSize: 10, fontWeight: 700, position: "left" }} />
+        <Area type="monotone" dataKey="gdpPast" stroke="#f59e0b" fill="url(#gdpPastGrad)" strokeWidth={2.5} dot={false} connectNulls={false} />
+        <Area type="monotone" dataKey="gdpProj" stroke="#10b981" fill="url(#gdpProjGrad)" strokeWidth={2.5} dot={false} strokeDasharray="6 3" connectNulls={false} />
       </AreaChart>
     </ResponsiveContainer>
   );
@@ -301,45 +330,102 @@ function GDPChart({ data, currentYear }: { data: ChartData[]; currentYear: numbe
 
 function GrowthChart({ data }: { data: ChartData[] }) {
   const axisColor = "var(--text-3)";
+  const filtered = data.filter((d) => d.year >= 2024);
+  const maxGrowth = Math.max(...filtered.map(d => d.growth));
+  const minGrowth = Math.min(...filtered.map(d => d.growth));
+
+  const getBarColor = (growth: number) => {
+    if (growth <= 0) return "#ef4444";
+    const ratio = growth / maxGrowth;
+    if (ratio > 0.8) return "#10b981";
+    if (ratio > 0.5) return "#0ea5e9";
+    if (ratio > 0.3) return "#38bdf8";
+    return "#7dd3fc";
+  };
+
   return (
     <ResponsiveContainer>
-      <BarChart data={data.filter((d) => d.year >= 2024)}>
+      <ComposedChart data={filtered}>
+        <defs>
+          <linearGradient id="growthBarGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.9} />
+            <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.4} />
+          </linearGradient>
+          <filter id="barGlow">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
         <XAxis dataKey="year" stroke={axisColor} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-        <YAxis stroke={axisColor} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+        <YAxis stroke={axisColor} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} domain={[Math.min(0, minGrowth - 1), maxGrowth + 2]} />
         <Tooltip
-          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-1)" }}
+          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12, color: "var(--text-1)" }}
           formatter={((v: unknown) => [`${Number(v).toFixed(1)}%`, "Growth"]) as never}
+          cursor={{ fill: "var(--accent)", opacity: 0.06 }}
         />
-        <ReferenceLine y={0} stroke={axisColor} />
-        <Bar
-          dataKey="growth"
-          radius={[2, 2, 0, 0]}
-          fill="#0ea5e9"
+        <ReferenceLine y={0} stroke={axisColor} strokeOpacity={0.3} />
+        {/* Avg growth reference */}
+        <ReferenceLine
+          y={Number((filtered.reduce((a, b) => a + b.growth, 0) / filtered.length).toFixed(1))}
+          stroke="#f59e0b"
+          strokeDasharray="6 4"
+          strokeWidth={1.5}
+          label={{ value: `Avg ${(filtered.reduce((a, b) => a + b.growth, 0) / filtered.length).toFixed(1)}%`, fill: "#f59e0b", fontSize: 10, position: "right" }}
         />
-      </BarChart>
+        <Bar dataKey="growth" radius={[4, 4, 0, 0]} animationDuration={800}>
+          {filtered.map((entry, idx) => (
+            <Cell key={idx} fill={getBarColor(entry.growth)} />
+          ))}
+        </Bar>
+        <Line type="monotone" dataKey="growth" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }
 
 function PerCapitaChart({ data, currentYear }: { data: ChartData[]; currentYear: number }) {
   const axisColor = "var(--text-3)";
+  const merged = data.map(d => ({
+    ...d,
+    pcPast: d.year <= currentYear ? d.perCapita : undefined,
+    pcProj: d.year >= currentYear ? d.perCapita : undefined,
+  }));
+
+  // Key milestones
+  const milestones = [5000, 10000, 20000];
+  const currentPC = data.find(d => d.year === currentYear)?.perCapita ?? 0;
+  const maxPC = Math.max(...data.map(d => d.perCapita));
+
   return (
     <ResponsiveContainer>
-      <AreaChart data={data}>
+      <AreaChart data={merged}>
         <defs>
-          <linearGradient id="pcGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.3} />
+          <linearGradient id="pcPastGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.45} />
+            <stop offset="50%" stopColor="#0ea5e9" stopOpacity={0.12} />
             <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="pcProjGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.4} />
+            <stop offset="50%" stopColor="#a78bfa" stopOpacity={0.1} />
+            <stop offset="100%" stopColor="#a78bfa" stopOpacity={0} />
           </linearGradient>
         </defs>
         <XAxis dataKey="year" stroke={axisColor} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
         <YAxis stroke={axisColor} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`} />
         <Tooltip
-          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-1)" }}
-          formatter={((v: unknown) => [`$${Math.round(Number(v)).toLocaleString()}`, "Per Capita"]) as never}
+          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12, color: "var(--text-1)" }}
+          formatter={((v: unknown) => v != null ? [`$${Math.round(Number(v)).toLocaleString()}`, "Per Capita"] : []) as never}
         />
-        <ReferenceLine x={currentYear} stroke={axisColor} strokeDasharray="3 3" />
-        <Area type="monotone" dataKey="perCapita" stroke="#0ea5e9" fill="url(#pcGrad)" strokeWidth={2} dot={false} />
+        <ReferenceLine x={currentYear} stroke="var(--accent)" strokeWidth={2} strokeDasharray="4 4" label={{ value: "▼ NOW", fill: "var(--accent)", fontSize: 10, fontWeight: 700, position: "top" }} />
+        {milestones.filter(m => m <= maxPC * 1.1).map(m => (
+          <ReferenceLine key={m} y={m} stroke="#a78bfa" strokeDasharray="6 4" strokeOpacity={0.5} label={{ value: `$${(m/1000)}K`, fill: "#a78bfa", fontSize: 9, position: "right" }} />
+        ))}
+        <Area type="monotone" dataKey="pcPast" stroke="#0ea5e9" fill="url(#pcPastGrad)" strokeWidth={2.5} dot={false} connectNulls={false} />
+        <Area type="monotone" dataKey="pcProj" stroke="#a78bfa" fill="url(#pcProjGrad)" strokeWidth={2.5} dot={false} strokeDasharray="6 3" connectNulls={false} />
       </AreaChart>
     </ResponsiveContainer>
   );
@@ -347,17 +433,50 @@ function PerCapitaChart({ data, currentYear }: { data: ChartData[]; currentYear:
 
 function ShareChart({ data }: { data: ChartData[] }) {
   const axisColor = "var(--text-3)";
+  const maxShare = Math.max(...data.map(d => d.share));
+  const minShare = Math.min(...data.map(d => d.share));
+  const trend = data[data.length - 1].share - data[0].share;
+  const currentYear = new Date().getFullYear();
+
   return (
     <ResponsiveContainer>
-      <LineChart data={data}>
+      <AreaChart data={data}>
+        <defs>
+          <linearGradient id="shareGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={trend >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0.35} />
+            <stop offset="50%" stopColor={trend >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0.1} />
+            <stop offset="100%" stopColor={trend >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <XAxis dataKey="year" stroke={axisColor} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-        <YAxis stroke={axisColor} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v.toFixed(1)}%`} />
+        <YAxis
+          stroke={axisColor} tick={{ fontSize: 11 }} axisLine={false} tickLine={false}
+          tickFormatter={(v) => `${v.toFixed(1)}%`}
+          domain={[Math.floor(minShare * 10) / 10 - 0.2, Math.ceil(maxShare * 10) / 10 + 0.2]}
+        />
         <Tooltip
-          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-1)" }}
+          contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12, color: "var(--text-1)" }}
           formatter={((v: unknown) => [`${Number(v).toFixed(2)}%`, "National Share"]) as never}
         />
-        <Line type="monotone" dataKey="share" stroke="#38bdf8" strokeWidth={2} dot={false} />
-      </LineChart>
+        <ReferenceLine x={currentYear} stroke="var(--accent)" strokeWidth={2} strokeDasharray="4 4" label={{ value: "▼ NOW", fill: "var(--accent)", fontSize: 10, fontWeight: 700, position: "top" }} />
+        {/* Average line */}
+        <ReferenceLine
+          y={Number((data.reduce((a, b) => a + b.share, 0) / data.length).toFixed(2))}
+          stroke="#f59e0b"
+          strokeDasharray="6 4"
+          strokeWidth={1}
+          label={{ value: "Avg", fill: "#f59e0b", fontSize: 9, position: "right" }}
+        />
+        <Area
+          type="monotone"
+          dataKey="share"
+          stroke={trend >= 0 ? "#10b981" : "#ef4444"}
+          fill="url(#shareGrad)"
+          strokeWidth={2.5}
+          dot={false}
+          animationDuration={800}
+        />
+      </AreaChart>
     </ResponsiveContainer>
   );
 }

@@ -10,12 +10,20 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  AreaChart,
+  Area,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
 } from "recharts";
 import {
   STATES_DATA,
   ALL_YEARS,
   getStateGDPForYear,
   getStatePopulation,
+  getStateGrowthRate,
   fmtB,
   type StateData,
 } from "@/lib/data";
@@ -32,11 +40,13 @@ const CHART_COLORS = [
 ];
 
 type Metric = "gdp" | "perCapita" | "growth";
+type ChartView = "area" | "radar";
 
 export default function ComparePage() {
   const [selected, setSelected] = useState<string[]>(["MH", "TN", "KA"]);
   const [metric, setMetric] = useState<Metric>("gdp");
   const [startYear, setStartYear] = useState(2024);
+  const [chartView, setChartView] = useState<ChartView>("area");
 
   const selectedStates = useMemo(
     () => selected.map((c) => STATES_DATA.find((s) => s.code === c)!).filter(Boolean),
@@ -60,6 +70,42 @@ export default function ComparePage() {
       return row;
     });
   }, [selectedStates, metric, startYear]);
+
+  // Radar data: normalize each metric to 0-100 scale across selected states
+  const radarData = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const dimensions = [
+      { key: "gdp", label: "GDP" },
+      { key: "growth", label: "Growth" },
+      { key: "perCapita", label: "Per Capita" },
+      { key: "gdp2047", label: "GDP 2047" },
+      { key: "pop", label: "Population" },
+    ];
+
+    const raw: Record<string, Record<string, number>> = {};
+    selectedStates.forEach(s => {
+      const gdp = getStateGDPForYear(s, currentYear);
+      const pop = getStatePopulation(s, currentYear);
+      const growth = getStateGrowthRate(s, currentYear);
+      const pc = pop > 0 ? (gdp * 1e9) / (pop * 1e6) : 0;
+      const gdp47 = getStateGDPForYear(s, 2047);
+      raw[s.code] = { gdp, growth, perCapita: pc, gdp2047: gdp47, pop: s.popMillions };
+    });
+
+    // Find max for each dimension
+    const maxes: Record<string, number> = {};
+    dimensions.forEach(d => {
+      maxes[d.key] = Math.max(...selectedStates.map(s => raw[s.code]?.[d.key] ?? 0), 1);
+    });
+
+    return dimensions.map(d => {
+      const point: Record<string, string | number> = { dimension: d.label };
+      selectedStates.forEach(s => {
+        point[s.code] = Math.round(((raw[s.code]?.[d.key] ?? 0) / maxes[d.key]) * 100);
+      });
+      return point;
+    });
+  }, [selectedStates]);
 
   function toggleState(code: string) {
     setSelected((prev) =>
@@ -114,6 +160,26 @@ export default function ComparePage() {
             ))}
           </div>
 
+          {/* Chart view toggle */}
+          <div className="flex gap-1 ml-2">
+            {([
+              { key: "area" as ChartView, label: "Timeline" },
+              { key: "radar" as ChartView, label: "Radar" },
+            ]).map((v) => (
+              <button
+                key={v.key}
+                onClick={() => setChartView(v.key)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  chartView === v.key
+                    ? "bg-accent/15 text-accent"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+
           {/* Start year */}
           <div className="flex items-center gap-2 ml-auto">
             <span className="text-xs text-muted">From:</span>
@@ -158,50 +224,99 @@ export default function ComparePage() {
       {selectedStates.length > 0 && (
         <div className="card-glass p-5">
           <h3 className="text-sm font-semibold text-muted mb-4 uppercase tracking-wider">
-            {metric === "gdp" && "GDP Comparison ($B)"}
-            {metric === "perCapita" && "Per Capita GDP Comparison ($)"}
-            {metric === "growth" && "YoY Growth Rate Comparison (%)"}
+            {chartView === "radar"
+              ? "Multi-Dimensional Comparison (Normalized)"
+              : metric === "gdp" ? "GDP Comparison ($B)"
+              : metric === "perCapita" ? "Per Capita GDP Comparison ($)"
+              : "YoY Growth Rate Comparison (%)"}
           </h3>
-          <div className="h-[280px] sm:h-[400px]">
-            <ResponsiveContainer>
-              <LineChart data={chartData}>
-                <XAxis dataKey="year" stroke="var(--text-3)" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis
-                  stroke="var(--text-3)"
-                  tick={{ fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v: number) => {
-                    if (metric === "gdp") return v >= 1000 ? `${(v / 1000).toFixed(1)}T` : `${v}B`;
-                    if (metric === "perCapita") return `$${(v / 1000).toFixed(0)}K`;
-                    return `${v}%`;
-                  }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--bg-surface)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    color: "var(--text-1)",
-                  }}
-                  formatter={((v: unknown, name: unknown) => [formatValue(Number(v ?? 0)), String(name ?? '')]) as never}
-                />
-                <Legend />
-                {selectedStates.map((s, i) => (
-                  <Line
-                    key={s.code}
-                    type="monotone"
-                    dataKey={s.code}
-                    name={s.name}
-                    stroke={CHART_COLORS[i % CHART_COLORS.length]}
-                    strokeWidth={2}
-                    dot={false}
+
+          {chartView === "area" ? (
+            <div className="h-[280px] sm:h-[400px]">
+              <ResponsiveContainer>
+                <AreaChart data={chartData}>
+                  <defs>
+                    {selectedStates.map((s, i) => (
+                      <linearGradient key={s.code} id={`grad-${s.code}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CHART_COLORS[i % CHART_COLORS.length]} stopOpacity={0.35} />
+                        <stop offset="50%" stopColor={CHART_COLORS[i % CHART_COLORS.length]} stopOpacity={0.08} />
+                        <stop offset="100%" stopColor={CHART_COLORS[i % CHART_COLORS.length]} stopOpacity={0} />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  <XAxis dataKey="year" stroke="var(--text-3)" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis
+                    stroke="var(--text-3)"
+                    tick={{ fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v: number) => {
+                      if (metric === "gdp") return v >= 1000 ? `${(v / 1000).toFixed(1)}T` : `${v}B`;
+                      if (metric === "perCapita") return `$${(v / 1000).toFixed(0)}K`;
+                      return `${v}%`;
+                    }}
                   />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--bg-surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 12,
+                      fontSize: 12,
+                      color: "var(--text-1)",
+                      backdropFilter: "blur(8px)",
+                    }}
+                    formatter={((v: unknown, name: unknown) => [formatValue(Number(v ?? 0)), String(name ?? '')]) as never}
+                  />
+                  <Legend />
+                  {selectedStates.map((s, i) => (
+                    <Area
+                      key={s.code}
+                      type="monotone"
+                      dataKey={s.code}
+                      name={s.name}
+                      stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                      fill={`url(#grad-${s.code})`}
+                      strokeWidth={2.5}
+                      dot={false}
+                      animationDuration={800}
+                    />
+                  ))}
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-[350px] sm:h-[450px]">
+              <ResponsiveContainer>
+                <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
+                  <PolarGrid stroke="var(--border)" strokeOpacity={0.5} />
+                  <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fill: "var(--text-2)" }} />
+                  <PolarRadiusAxis tick={{ fontSize: 9, fill: "var(--text-3)" }} domain={[0, 100]} tickCount={5} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--bg-surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 12,
+                      fontSize: 12,
+                      color: "var(--text-1)",
+                    }}
+                  />
+                  <Legend />
+                  {selectedStates.map((s, i) => (
+                    <Radar
+                      key={s.code}
+                      name={s.name}
+                      dataKey={s.code}
+                      stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                      fill={CHART_COLORS[i % CHART_COLORS.length]}
+                      fillOpacity={0.15}
+                      strokeWidth={2}
+                      animationDuration={800}
+                    />
+                  ))}
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       )}
 
