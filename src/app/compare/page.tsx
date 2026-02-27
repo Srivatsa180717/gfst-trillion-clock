@@ -165,9 +165,9 @@ export default function ComparePage() {
           <div className="h-[400px]">
             <ResponsiveContainer>
               <LineChart data={chartData}>
-                <XAxis dataKey="year" stroke="#737373" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="year" stroke="var(--text-3)" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis
-                  stroke="#737373"
+                  stroke="var(--text-3)"
                   tick={{ fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
@@ -179,10 +179,11 @@ export default function ComparePage() {
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "#141414",
-                    border: "1px solid #262626",
+                    background: "var(--bg-surface)",
+                    border: "1px solid var(--border)",
                     borderRadius: 8,
                     fontSize: 12,
+                    color: "var(--text-1)",
                   }}
                   formatter={((v: unknown, name: unknown) => [formatValue(Number(v ?? 0)), String(name ?? '')]) as never}
                 />
