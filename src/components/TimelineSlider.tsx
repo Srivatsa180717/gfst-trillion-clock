@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { MIN_YEAR, MAX_YEAR, INDIA_GDP } from "@/lib/data";
 
 interface Props {
@@ -8,58 +8,128 @@ interface Props {
   onChange: (year: number) => void;
 }
 
+const MILESTONES = [
+  { year: 2010, label: "$1.7T" },
+  { year: 2020, label: "$2.7T" },
+  { year: 2024, label: "$3.9T" },
+  { year: 2030, label: "$7.4T" },
+  { year: 2035, label: "$13.2T" },
+  { year: 2040, label: "$23.6T" },
+  { year: 2047, label: "$53.5T" },
+];
+
+function pct(y: number) {
+  return ((y - MIN_YEAR) / (MAX_YEAR - MIN_YEAR)) * 100;
+}
+
 export function TimelineSlider({ year, onChange }: Props) {
-  const milestones = [2024, 2030, 2035, 2040, 2047];
+  const trackRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+
+  const yearFromEvent = useCallback((e: React.MouseEvent | MouseEvent) => {
+    const track = trackRef.current;
+    if (!track) return year;
+    const rect = track.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    return Math.round(MIN_YEAR + ratio * (MAX_YEAR - MIN_YEAR));
+  }, [year]);
+
+  const handlePointerDown = useCallback((e: React.MouseEvent) => {
+    dragging.current = true;
+    onChange(yearFromEvent(e));
+    const onMove = (ev: MouseEvent) => {
+      if (dragging.current) onChange(yearFromEvent(ev));
+    };
+    const onUp = () => {
+      dragging.current = false;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [onChange, yearFromEvent]);
+
+  const thumbPct = pct(year);
 
   return (
     <div className="card-glass" style={{ padding: "20px 24px" }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-bold tracking-[2px] uppercase"
+      <div className="flex items-center justify-between mb-5">
+        <span
+          className="text-xs font-bold tracking-[2px] uppercase"
           style={{ color: "var(--text-3)" }}
         >
           Timeline
         </span>
-        <span className="font-mono text-3xl font-extrabold"
+        <span
+          className="font-mono text-3xl font-extrabold"
           style={{ color: "var(--accent)" }}
         >
           {year}
         </span>
       </div>
 
-      {/* Slider */}
-      <input
-        type="range"
-        min={MIN_YEAR}
-        max={MAX_YEAR}
-        step={1}
-        value={year}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="year-slider w-full"
-      />
-
-      {/* Milestone labels */}
-      <div className="flex justify-between mt-2 px-1">
-        {milestones.map((m) => (
-          <button
-            key={m}
-            onClick={() => onChange(m)}
-            className="text-center transition-all"
+      {/* Custom track */}
+      <div className="relative px-2">
+        {/* Track bar */}
+        <div
+          ref={trackRef}
+          className="relative h-2 rounded-full cursor-pointer"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+          onMouseDown={handlePointerDown}
+        >
+          {/* Filled portion */}
+          <div
+            className="absolute inset-y-0 left-0 rounded-full"
             style={{
-              color: year === m ? "var(--accent)" : "var(--text-3)",
-              fontWeight: year === m ? 700 : 500,
+              width: `${thumbPct}%`,
+              background: "var(--accent)",
+              opacity: 0.35,
             }}
-          >
-            <span className="block text-xs">{m}</span>
-            <span className="block text-[10px] opacity-60">
-              ${(INDIA_GDP[m] / 1000).toFixed(1)}T
-            </span>
-          </button>
-        ))}
+          />
+
+          {/* Thumb */}
+          <div
+            className="absolute top-1/2"
+            style={{
+              left: `${thumbPct}%`,
+              transform: "translate(-50%, -50%)",
+              width: 22,
+              height: 22,
+              borderRadius: "50%",
+              background: "var(--accent)",
+              boxShadow: "0 0 12px var(--accent-glow), 0 2px 6px rgba(0,0,0,0.3)",
+              cursor: "grab",
+            }}
+          />
+        </div>
+
+        {/* Milestone ticks + labels */}
+        <div className="relative mt-3" style={{ height: 36 }}>
+          {MILESTONES.map((m) => {
+            const isActive = year === m.year;
+            return (
+              <button
+                key={m.year}
+                onClick={() => onChange(m.year)}
+                className="absolute text-center transition-all"
+                style={{
+                  left: `${pct(m.year)}%`,
+                  transform: "translateX(-50%)",
+                  color: isActive ? "var(--accent)" : "var(--text-3)",
+                  fontWeight: isActive ? 700 : 500,
+                }}
+              >
+                <span className="block text-xs">{m.year}</span>
+                <span className="block text-[10px] opacity-60">{m.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Play controls */}
-      <div className="flex items-center justify-center gap-2 mt-4">
+      <div className="flex items-center justify-center gap-2 mt-3">
         <PlayButton year={year} onChange={onChange} />
       </div>
     </div>
