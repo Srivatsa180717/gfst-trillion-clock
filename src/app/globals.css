@@ -1,0 +1,374 @@
+@import "tailwindcss";
+
+/* ── GFST Design Tokens ── */
+@theme inline {
+  /* Semantic color tokens — overridden by data-theme */
+  --color-background: var(--bg-base);
+  --color-foreground: var(--text-1);
+  --color-surface: var(--bg-surface);
+  --color-surface-hover: var(--bg-card-hover);
+  --color-border: var(--border);
+  --color-muted: var(--text-2);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-accent-glow: var(--accent-glow);
+  --color-gold: var(--gold);
+  --color-gold-dim: rgba(250, 204, 21, 0.12);
+  --color-sky: #0ea5e9;
+  --color-sky-light: #38bdf8;
+  --color-sky-lighter: #7dd3fc;
+  --color-red-light: #f87171;
+  --color-red-medium: #ef4444;
+  --color-red-dark: #b91c1c;
+  --color-card: var(--bg-card);
+  --color-card-border: var(--glass-border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ── DARK THEME (default) ── */
+:root,
+[data-theme="dark"] {
+  --bg-base: #060a13;
+  --bg-surface: #0d1321;
+  --bg-card: rgba(15, 23, 42, 0.65);
+  --bg-card-hover: rgba(22, 33, 56, 0.75);
+  --glass: rgba(15, 23, 42, 0.5);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --accent: #00e5a0;
+  --accent-rgb: 0, 229, 160;
+  --accent-dim: rgba(0, 229, 160, 0.12);
+  --accent-glow: rgba(0, 229, 160, 0.35);
+  --gold: #facc15;
+  --text-1: #f1f5f9;
+  --text-2: #94a3b8;
+  --text-3: #475569;
+  --border: rgba(255, 255, 255, 0.07);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --chart-grid: #1e293b;
+  --chart-tooltip-bg: #0f172a;
+}
+
+/* ── LIGHT THEME ── */
+[data-theme="light"] {
+  --bg-base: #f0f4f8;
+  --bg-surface: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.7);
+  --bg-card-hover: rgba(255, 255, 255, 0.85);
+  --glass: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --accent: #059669;
+  --accent-rgb: 5, 150, 105;
+  --accent-dim: rgba(5, 150, 105, 0.1);
+  --accent-glow: rgba(5, 150, 105, 0.25);
+  --gold: #d97706;
+  --text-1: #0f172a;
+  --text-2: #475569;
+  --text-3: #94a3b8;
+  --border: rgba(0, 0, 0, 0.08);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --chart-grid: #e2e8f0;
+  --chart-tooltip-bg: #ffffff;
+}
+
+/* ── Base styles ── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-1);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--text-3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-2); }
+
+/* ── Card glass ── */
+.card-glass {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  transition: background 0.35s, border-color 0.35s, box-shadow 0.35s;
+}
+.card-glass:hover {
+  border-color: rgba(var(--accent-rgb), 0.15);
+}
+
+/* ── Glow effects ── */
+.glow-accent {
+  box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.15),
+              0 0 80px rgba(var(--accent-rgb), 0.06);
+}
+.glow-accent-text {
+  text-shadow: 0 0 40px rgba(var(--accent-rgb), 0.4),
+               0 0 80px rgba(var(--accent-rgb), 0.12);
+}
+
+/* ── Clock Digit Cells (matching original project) ── */
+.clock-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0;
+}
+.clock-dollar {
+  font-family: var(--font-mono), monospace;
+  font-size: 52px;
+  font-weight: 300;
+  color: var(--accent);
+  opacity: 0.65;
+}
+.digit-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.62em;
+  font-family: var(--font-mono), monospace;
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  text-shadow: 0 0 40px var(--accent-glow), 0 0 80px rgba(var(--accent-rgb), 0.12);
+  overflow: hidden;
+  position: relative;
+  transition: color 0.1s;
+}
+.digit-cell.sep {
+  width: 0.35em;
+  color: var(--text-3);
+  opacity: 0.5;
+}
+@media (min-width: 768px) {
+  .digit-cell { font-size: 86px; }
+  .clock-dollar { font-size: 60px; }
+}
+@keyframes digitPop {
+  0% { transform: translateY(-8px); opacity: 0.3; }
+  60% { transform: translateY(2px); opacity: 1; }
+  100% { transform: translateY(0); }
+}
+.digit-changed {
+  animation: digitPop 0.25s ease;
+}
+
+/* ── Pulse ring ── */
+.pulse-ring {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  position: relative;
+  flex-shrink: 0;
+}
+.pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: pulseOut 1.6s infinite;
+}
+@keyframes pulseOut {
+  0% { transform: scale(0.7); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* ── Live badge blink ── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.live-dot { animation: blink 1.4s infinite; }
+
+/* ── Ticker animation ── */
+@keyframes ticker-update {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.ticker-animate { animation: ticker-update 0.3s ease-out; }
+
+/* ── Map ── */
+.map-path {
+  transition: fill 0.4s, stroke 0.2s, filter 0.2s;
+  cursor: pointer;
+}
+.map-path:hover {
+  filter: brightness(1.35);
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 1;
+}
+[data-theme="light"] .map-path:hover {
+  filter: brightness(1.1);
+  stroke: rgba(0, 0, 0, 0.3);
+}
+
+/* ── Gradient divider ── */
+.gradient-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.3), transparent);
+}
+
+/* ── Metric card transitions ── */
+.metric-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 18px 14px;
+  text-align: center;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.metric-card:hover {
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+}
+
+/* ── Slider styling ── */
+.year-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  background: var(--bg-card);
+}
+.year-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 16px var(--accent-glow);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.year-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+}
+.year-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+/* ── Count animation ── */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.count-up { animation: count-up 0.5s ease-out forwards; }
+
+/* ── Animated background particles ── */
+.bg-particles {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+}
+[data-theme="light"] .bg-particles {
+  opacity: 0.2;
+}
+
+/* ── Year chip ── */
+.year-chip {
+  display: inline-block;
+  padding: 2px 14px;
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 13px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+}
+
+/* ── Vision badge glow ── */
+.vision-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, var(--accent-dim), transparent 70%);
+  pointer-events: none;
+}
+
+/* ── FX Live badge ── */
+.fx-live {
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 100px;
+  margin-left: 4px;
+  background: var(--accent);
+  color: #fff;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+  animation: fxPulse 2s infinite;
+}
+@keyframes fxPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ── Theme transition for all themed elements ── */
+.theme-transition {
+  transition: background 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Shimmer loading effect ── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(var(--accent-rgb), 0.08) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ── Milestone bar ── */
+.ms-seg {
+  flex: 1;
+  border-radius: 4px;
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-3);
+  transition: all 0.5s ease;
+  border: 1px solid var(--glass-border);
+}
+.ms-seg.filled {
+  background: linear-gradient(135deg, var(--accent), #00b880);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+[data-theme="light"] .ms-seg.filled { color: #fff; }
