@@ -40,10 +40,10 @@
   --accent-dim: rgba(0, 229, 160, 0.12);
   --accent-glow: rgba(0, 229, 160, 0.35);
   --gold: #facc15;
-  --text-1: #f1f5f9;
-  --text-2: #a9b8cc;
-  --text-3: #64748b;
-  --border: rgba(255, 255, 255, 0.12);
+  --text-1: #f8fafc;
+  --text-2: #cbd5e1;
+  --text-3: #94a3b8;
+  --border: rgba(255, 255, 255, 0.14);
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   --chart-grid: #1e293b;
   --chart-tooltip-bg: #0f172a;
