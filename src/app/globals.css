@@ -30,20 +30,20 @@
 :root,
 [data-theme="dark"] {
   --bg-base: #060a13;
-  --bg-surface: #0d1321;
-  --bg-card: rgba(15, 23, 42, 0.65);
-  --bg-card-hover: rgba(22, 33, 56, 0.75);
-  --glass: rgba(15, 23, 42, 0.5);
-  --glass-border: rgba(255, 255, 255, 0.06);
+  --bg-surface: #0f1729;
+  --bg-card: rgba(17, 27, 48, 0.82);
+  --bg-card-hover: rgba(24, 38, 66, 0.9);
+  --glass: rgba(17, 27, 48, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.12);
   --accent: #00e5a0;
   --accent-rgb: 0, 229, 160;
   --accent-dim: rgba(0, 229, 160, 0.12);
   --accent-glow: rgba(0, 229, 160, 0.35);
   --gold: #facc15;
   --text-1: #f1f5f9;
-  --text-2: #94a3b8;
-  --text-3: #475569;
-  --border: rgba(255, 255, 255, 0.07);
+  --text-2: #a9b8cc;
+  --text-3: #64748b;
+  --border: rgba(255, 255, 255, 0.12);
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   --chart-grid: #1e293b;
   --chart-tooltip-bg: #0f172a;
@@ -101,10 +101,11 @@ body {
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
+  box-shadow: var(--shadow);
   transition: background 0.35s, border-color 0.35s, box-shadow 0.35s;
 }
 .card-glass:hover {
-  border-color: rgba(var(--accent-rgb), 0.15);
+  border-color: rgba(var(--accent-rgb), 0.18);
 }
 
 /* ── Glow effects ── */
@@ -237,11 +238,14 @@ body {
   border-radius: 14px;
   padding: 18px 14px;
   text-align: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .metric-card:hover {
   background: var(--bg-card-hover);
+  border-color: rgba(var(--accent-rgb), 0.2);
   transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
 }
 
 /* ── Slider styling ── */
