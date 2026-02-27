@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "@/components/ThemeProvider";
 
 const NAV_ITEMS = [
@@ -13,7 +14,9 @@ const NAV_ITEMS = [
 export function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [userMenu, setUserMenu] = useState(false);
   const { theme, toggle } = useTheme();
+  const { data: session } = useSession();
 
   return (
     <header className="sticky top-0 z-50 theme-transition"
@@ -93,6 +96,72 @@ export function Navbar() {
           >
             World Bank · IMF · Viksit Bharat 2047
           </span>
+
+          {/* Auth */}
+          {session?.user ? (
+            <div className="relative">
+              <button
+                onClick={() => setUserMenu(!userMenu)}
+                className="flex items-center gap-2 rounded-full transition-all"
+                style={{
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-card)",
+                  padding: "4px 12px 4px 4px",
+                }}
+              >
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{
+                    background: "var(--accent-dim)",
+                    color: "var(--accent)",
+                  }}
+                >
+                  {session.user.name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase() || "U"}
+                </div>
+                <span className="text-xs font-medium hidden sm:inline" style={{ color: "var(--text-1)" }}>
+                  {session.user.name || session.user.email?.split("@")[0]}
+                </span>
+              </button>
+              {userMenu && (
+                <div
+                  className="absolute right-0 top-full mt-2 w-48 rounded-xl p-2 z-50"
+                  style={{
+                    background: "var(--bg-surface)",
+                    border: "1px solid var(--border)",
+                    boxShadow: "var(--shadow)",
+                  }}
+                >
+                  <div className="px-3 py-2 mb-1" style={{ borderBottom: "1px solid var(--border)" }}>
+                    <p className="text-xs font-medium" style={{ color: "var(--text-1)" }}>
+                      {session.user.name}
+                    </p>
+                    <p className="text-[10px]" style={{ color: "var(--text-3)" }}>
+                      {session.user.email}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { setUserMenu(false); signOut(); }}
+                    className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                    style={{ color: "#f87171" }}
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/auth/signin"
+              className="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap"
+              style={{
+                background: "var(--accent)",
+                color: "#fff",
+                boxShadow: "0 0 16px var(--accent-glow)",
+              }}
+            >
+              Sign In
+            </Link>
+          )}
 
           {/* Theme toggle */}
           <button

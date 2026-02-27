@@ -98,12 +98,12 @@ export function StateDetailClient({ stateCode }: Props) {
               <StateMapSilhouette stateCode={state.code} size={200} color={color} />
             </div>
             <div>
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
               <span
                 className="w-4 h-4 rounded-full"
                 style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}44` }}
               />
-              <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: "var(--text-1)" }}>{state.name}</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold" style={{ color: "var(--text-1)" }}>{state.name}</h1>
               <span className="text-sm font-mono px-2 py-0.5 rounded"
                 style={{ color: "var(--text-3)", background: "var(--bg-surface)" }}
               >

@@ -126,7 +126,7 @@ body {
 }
 .clock-dollar {
   font-family: var(--font-mono), monospace;
-  font-size: 52px;
+  font-size: 22px;
   font-weight: 300;
   color: var(--accent);
   opacity: 0.65;
@@ -137,7 +137,7 @@ body {
   justify-content: center;
   width: 0.62em;
   font-family: var(--font-mono), monospace;
-  font-size: 72px;
+  font-size: 28px;
   font-weight: 700;
   line-height: 1;
   color: var(--accent);
@@ -151,7 +151,15 @@ body {
   color: var(--text-3);
   opacity: 0.5;
 }
+@media (min-width: 480px) {
+  .digit-cell { font-size: 48px; }
+  .clock-dollar { font-size: 36px; }
+}
 @media (min-width: 768px) {
+  .digit-cell { font-size: 72px; }
+  .clock-dollar { font-size: 52px; }
+}
+@media (min-width: 1024px) {
   .digit-cell { font-size: 86px; }
   .clock-dollar { font-size: 60px; }
 }

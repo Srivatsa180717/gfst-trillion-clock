@@ -9,13 +9,13 @@ interface Props {
 }
 
 const MILESTONES = [
-  { year: 2010, label: "$1.7T" },
-  { year: 2020, label: "$2.7T" },
-  { year: 2024, label: "$3.9T" },
-  { year: 2030, label: "$7.4T" },
-  { year: 2035, label: "$13.2T" },
-  { year: 2040, label: "$23.6T" },
-  { year: 2047, label: "$53.5T" },
+  { year: 2010, label: "$1.7T", mobileShow: true },
+  { year: 2020, label: "$2.7T", mobileShow: false },
+  { year: 2024, label: "$3.9T", mobileShow: true },
+  { year: 2030, label: "$7.4T", mobileShow: false },
+  { year: 2035, label: "$13.2T", mobileShow: true },
+  { year: 2040, label: "$23.6T", mobileShow: false },
+  { year: 2047, label: "$53.5T", mobileShow: true },
 ];
 
 function pct(y: number) {
@@ -26,19 +26,24 @@ export function TimelineSlider({ year, onChange }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
-  const yearFromEvent = useCallback((e: React.MouseEvent | MouseEvent) => {
+  const yearFromClientX = useCallback((clientX: number) => {
     const track = trackRef.current;
     if (!track) return year;
     const rect = track.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     return Math.round(MIN_YEAR + ratio * (MAX_YEAR - MIN_YEAR));
   }, [year]);
 
-  const handlePointerDown = useCallback((e: React.MouseEvent) => {
+  // Unified pointer handler for mouse + touch
+  const handleStart = useCallback((clientX: number) => {
     dragging.current = true;
-    onChange(yearFromEvent(e));
+    onChange(yearFromClientX(clientX));
+  }, [onChange, yearFromClientX]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    handleStart(e.clientX);
     const onMove = (ev: MouseEvent) => {
-      if (dragging.current) onChange(yearFromEvent(ev));
+      if (dragging.current) onChange(yearFromClientX(ev.clientX));
     };
     const onUp = () => {
       dragging.current = false;
@@ -47,14 +52,29 @@ export function TimelineSlider({ year, onChange }: Props) {
     };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
-  }, [onChange, yearFromEvent]);
+  }, [handleStart, onChange, yearFromClientX]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    handleStart(e.touches[0].clientX);
+  }, [handleStart]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (dragging.current) {
+      e.preventDefault();
+      onChange(yearFromClientX(e.touches[0].clientX));
+    }
+  }, [onChange, yearFromClientX]);
+
+  const handleTouchEnd = useCallback(() => {
+    dragging.current = false;
+  }, []);
 
   const thumbPct = pct(year);
 
   return (
-    <div className="card-glass" style={{ padding: "20px 24px" }}>
+    <div className="card-glass" style={{ padding: "16px 12px" }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-4 sm:mb-5 px-2">
         <span
           className="text-xs font-bold tracking-[2px] uppercase"
           style={{ color: "var(--text-3)" }}
@@ -62,7 +82,7 @@ export function TimelineSlider({ year, onChange }: Props) {
           Timeline
         </span>
         <span
-          className="font-mono text-3xl font-extrabold"
+          className="font-mono text-2xl sm:text-3xl font-extrabold"
           style={{ color: "var(--accent)" }}
         >
           {year}
@@ -74,9 +94,12 @@ export function TimelineSlider({ year, onChange }: Props) {
         {/* Track bar */}
         <div
           ref={trackRef}
-          className="relative h-2 rounded-full cursor-pointer"
+          className="relative h-2 rounded-full cursor-pointer touch-none"
           style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
-          onMouseDown={handlePointerDown}
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           {/* Filled portion */}
           <div
@@ -112,7 +135,7 @@ export function TimelineSlider({ year, onChange }: Props) {
               <button
                 key={m.year}
                 onClick={() => onChange(m.year)}
-                className="absolute text-center transition-all"
+                className={`absolute text-center transition-all ${!m.mobileShow ? "hidden sm:block" : ""}`}
                 style={{
                   left: `${pct(m.year)}%`,
                   transform: "translateX(-50%)",
@@ -120,8 +143,8 @@ export function TimelineSlider({ year, onChange }: Props) {
                   fontWeight: isActive ? 700 : 500,
                 }}
               >
-                <span className="block text-xs">{m.year}</span>
-                <span className="block text-[10px] opacity-60">{m.label}</span>
+                <span className="block text-[10px] sm:text-xs">{m.year}</span>
+                <span className="hidden sm:block text-[10px] opacity-60">{m.label}</span>
               </button>
             );
           })}

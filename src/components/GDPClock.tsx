@@ -107,7 +107,7 @@ export function GDPClock({ year }: Props) {
   const inrT = fx ? (currentGDP * fx.rate) / 1000 : null;
 
   return (
-    <div className="card-glass glow-accent" style={{ padding: "32px 24px 24px" }}>
+    <div className="card-glass glow-accent" style={{ padding: "16px 12px 16px" }}>
       {/* Title bar */}
       <div className="text-center mb-2">
         <p className="text-xs font-bold tracking-[3px] uppercase"
@@ -167,7 +167,7 @@ export function GDPClock({ year }: Props) {
       </div>
 
       {/* Metrics row */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
         <MetricCard label="Growth Rate" value={`${growth.toFixed(1)}%`} year={year} showYear />
         <MetricCard label="Global Rank" value={`#${rank}`} />
         <MetricCard
@@ -209,7 +209,7 @@ function MetricCard({
         {label} {showYear && year && <span>({year})</span>}
       </div>
       <div
-        className="font-mono text-xl sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis"
+        className="font-mono text-base sm:text-xl lg:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis"
         style={{ color: "var(--accent)" }}
       >
         {value}

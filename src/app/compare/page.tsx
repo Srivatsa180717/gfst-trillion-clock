@@ -162,7 +162,7 @@ export default function ComparePage() {
             {metric === "perCapita" && "Per Capita GDP Comparison ($)"}
             {metric === "growth" && "YoY Growth Rate Comparison (%)"}
           </h3>
-          <div className="h-[400px]">
+          <div className="h-[280px] sm:h-[400px]">
             <ResponsiveContainer>
               <LineChart data={chartData}>
                 <XAxis dataKey="year" stroke="var(--text-3)" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />

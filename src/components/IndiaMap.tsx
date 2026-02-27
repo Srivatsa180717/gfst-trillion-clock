@@ -225,7 +225,7 @@ export function IndiaMap({ year }: Props) {
           ) : (
             <div className="flex items-center justify-center h-full min-h-[200px]">
               <p className="text-sm text-center" style={{ color: "var(--text-3)" }}>
-                Hover over a state to see details
+                Tap or hover over a state to see details
               </p>
             </div>
           )}
